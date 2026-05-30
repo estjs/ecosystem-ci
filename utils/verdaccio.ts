@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 import process from 'node:process';
-import { VERDACCIO_CONFIG, VERDACCIO_STORAGE } from './paths';
+import { REPO_ROOT, VERDACCIO_CONFIG, VERDACCIO_STORAGE } from './paths';
 
 export interface VerdaccioHandle {
   url: string;
@@ -18,7 +18,9 @@ export async function startVerdaccio(port = 4873): Promise<VerdaccioHandle> {
     'pnpm',
     ['exec', 'verdaccio', '--config', VERDACCIO_CONFIG, '--listen', String(port)],
     {
-      cwd: VERDACCIO_STORAGE,
+      // Run from the ecosystem-ci root so `pnpm exec` finds verdaccio in
+      // THIS project's node_modules, not in the empty VERDACCIO_STORAGE dir.
+      cwd: REPO_ROOT,
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, VERDACCIO_HANDLE_KILL_SIGNALS: 'true' },
     },
