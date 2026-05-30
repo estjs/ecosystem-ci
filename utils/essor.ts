@@ -32,7 +32,16 @@ export function prepareEssor(ref: string, skipBuild = false): EssorCheckout {
   // shadow our own working tree if the clone overlaps.
   rmSync(resolve(ESSOR_CHECKOUT, 'workspace'), { recursive: true, force: true });
 
-  run('pnpm', ['install', '--no-frozen-lockfile'], 'pnpm install (essor)', { cwd: ESSOR_CHECKOUT });
+  // Pass --config.minimumReleaseAge=0 to bypass pnpm supply-chain age policy.
+  // The policy is meant to protect against freshly-published malicious packages
+  // in day-to-day development; for CI we intentionally test the exact commit
+  // (possibly containing just-published deps), so skipping it is correct.
+  run(
+    'pnpm',
+    ['install', '--no-frozen-lockfile', '--config.minimumReleaseAge=0'],
+    'pnpm install (essor)',
+    { cwd: ESSOR_CHECKOUT },
+  );
 
   if (!skipBuild) {
     // Use essor's own root `build` script rather than invoking the per-package
