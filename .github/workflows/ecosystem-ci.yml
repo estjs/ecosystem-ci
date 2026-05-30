@@ -97,7 +97,9 @@ jobs:
           path: workspace/aggregate
 
       - name: Aggregate & render comment
-        run: pnpm exec tsx aggregate.ts
+        run: |
+          mkdir -p workspace
+          pnpm exec tsx aggregate.ts
         continue-on-error: true
 
       - name: Upload combined comment
@@ -114,7 +116,7 @@ jobs:
       # NOTE: HAVE_TOKEN is set at the job level (not step env) because the
       # `if:` expression is evaluated before the step's own env keys exist.
       - name: Post sticky comment on essor PR
-        if: ${{ inputs.pr_number != '' && env.HAVE_TOKEN == 'true' }}
+        if: ${{ inputs.pr_number != '' && env.HAVE_TOKEN == 'true' && hashFiles('workspace/comment.md') != '' }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           GITHUB_TOKEN: ${{ secrets.ESSOR_PR_TOKEN }}
@@ -122,3 +124,4 @@ jobs:
           number: ${{ inputs.pr_number }}
           path: workspace/comment.md
           header: ecosystem-ci
+

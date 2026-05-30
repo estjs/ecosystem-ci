@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { run } from './exec';
 import { ESSOR_CHECKOUT, ESSOR_REPO_URL, WORKSPACE } from './paths';
@@ -32,10 +32,15 @@ export function prepareEssor(ref: string, skipBuild = false): EssorCheckout {
   // shadow our own working tree if the clone overlaps.
   rmSync(resolve(ESSOR_CHECKOUT, 'workspace'), { recursive: true, force: true });
 
-  // Pass --config.minimumReleaseAge=0 to bypass pnpm supply-chain age policy.
-  // The policy is meant to protect against freshly-published malicious packages
-  // in day-to-day development; for CI we intentionally test the exact commit
-  // (possibly containing just-published deps), so skipping it is correct.
+  // Inject `minimum-release-age=0` into the essor checkout's .npmrc so that
+  // ALL subsequent pnpm calls — including the sub-process pnpm install that
+  // turbo spawns for each package's deps-status check — skip the supply-chain
+  // age policy. CI intentionally tests freshly-published commits, so the
+  // policy would otherwise block builds whenever a dep was just released.
+  appendFileSync(resolve(ESSOR_CHECKOUT, '.npmrc'), '\nminimum-release-age=0\n');
+
+  // --config.minimumReleaseAge=0 is redundant now (covered by .npmrc above)
+  // but kept for clarity: the top-level install also respects the flag.
   run(
     'pnpm',
     ['install', '--no-frozen-lockfile', '--config.minimumReleaseAge=0'],
