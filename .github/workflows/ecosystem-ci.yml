@@ -120,7 +120,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           GITHUB_TOKEN: ${{ secrets.ESSOR_PR_TOKEN }}
-          repo: estjs/essor
+          repo: essor
           number: ${{ inputs.pr_number }}
           path: workspace/comment.md
           header: ecosystem-ci
