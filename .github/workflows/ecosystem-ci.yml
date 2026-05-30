@@ -1,0 +1,124 @@
+name: ecosystem-ci
+
+# Runs downstream / ecosystem integration tests against a specified essor ref.
+# Triggered by:
+#   - schedule (Mon/Wed/Fri)
+#   - workflow_dispatch (manual, or remote dispatch from estjs/essor's PR
+#     comment trigger workflow which forwards the PR head SHA + PR number).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'essor ref to test (branch / tag / sha); default = main'
+        required: false
+        default: 'main'
+      suite:
+        description: 'Single suite id to run (empty = all)'
+        required: false
+        default: ''
+      pr_number:
+        description: 'PR number in estjs/essor to sticky-comment on (optional)'
+        required: false
+        default: ''
+  schedule:
+    # Mon/Wed/Fri at 05:13 UTC — off-the-hour to avoid the cron stampede.
+    - cron: '13 5 * * 1,3,5'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - essor-router
+          - athen
+          - test-utils
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          cache: pnpm
+
+      - name: Install ecosystem-ci deps
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Skip non-selected suite
+        if: ${{ inputs.suite != '' && inputs.suite != matrix.suite }}
+        run: echo "Skipping ${{ matrix.suite }} (selected = ${{ inputs.suite }})" && exit 0
+
+      - name: Run suite
+        if: ${{ inputs.suite == '' || inputs.suite == matrix.suite }}
+        run: pnpm exec tsx ecosystem-ci.ts --suite ${{ matrix.suite }} --ref ${{ inputs.ref || 'main' }}
+
+      - name: Upload result artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.suite }}
+          path: workspace/result-${{ matrix.suite }}.json
+          if-no-files-found: ignore
+
+  report:
+    name: report
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HAVE_TOKEN: ${{ secrets.ESSOR_PR_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Download all suite artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: result-*
+          path: workspace/aggregate
+
+      - name: Aggregate & render comment
+        run: pnpm exec tsx aggregate.ts
+        continue-on-error: true
+
+      - name: Upload combined comment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecosystem-ci-comment
+          path: workspace/comment.md
+          if-no-files-found: ignore
+
+      # Cross-repo PR comment. Needs a PAT with Issues:Write on estjs/essor —
+      # store it in this repo's secrets as ESSOR_PR_TOKEN. Without that secret
+      # the step is skipped (manual runs without pr_number won't have it).
+      # NOTE: HAVE_TOKEN is set at the job level (not step env) because the
+      # `if:` expression is evaluated before the step's own env keys exist.
+      - name: Post sticky comment on essor PR
+        if: ${{ inputs.pr_number != '' && env.HAVE_TOKEN == 'true' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.ESSOR_PR_TOKEN }}
+          repo: estjs/essor
+          number: ${{ inputs.pr_number }}
+          path: workspace/comment.md
+          header: ecosystem-ci

@@ -1,0 +1,35 @@
+{
+  "name": "ecosystem-ci",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "description": "Integration test runner for the essor ecosystem — runs downstream projects against a given essor commit.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/estjs/ecosystem-ci.git"
+  },
+  "scripts": {
+    "test": "tsx ecosystem-ci.ts",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "report": "tsx aggregate.ts",
+    "lint": "eslint ./ --cache",
+    "lint:fix": "eslint ./ --fix --cache",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@estjs/eslint-config": "^2.3.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.6.0",
+    "js-yaml": "^4.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "verdaccio": "^6.7.1",
+    "vitest": "^4.1.7"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

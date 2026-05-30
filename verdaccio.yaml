@@ -1,0 +1,53 @@
+storage: ./storage
+max_body_size: 200mb
+
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+    cache: false
+    timeout: 30s
+
+# Specific essor-family entries (no proxy) come BEFORE wildcards so they win
+# the match — verdaccio resolves package configs by first match.
+packages:
+  '@estjs/server':
+    access: $all
+    publish: $all
+    unpublish: $all
+  '@estjs/shared':
+    access: $all
+    publish: $all
+    unpublish: $all
+  '@estjs/signals':
+    access: $all
+    publish: $all
+    unpublish: $all
+  '@estjs/template':
+    access: $all
+    publish: $all
+    unpublish: $all
+  'essor':
+    access: $all
+    publish: $all
+    unpublish: $all
+  'unplugin-essor':
+    access: $all
+    publish: $all
+    unpublish: $all
+  'babel-plugin-essor':
+    access: $all
+    publish: $all
+    unpublish: $all
+  '@*/*':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '**':
+    access: $all
+    publish: $all
+    proxy: npmjs
+
+logs: { type: stdout, format: pretty, level: warn }
+
+publish:
+  allow_offline: true
