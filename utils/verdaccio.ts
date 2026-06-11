@@ -15,10 +15,10 @@ export async function startVerdaccio(port = 4873): Promise<VerdaccioHandle> {
   mkdirSync(VERDACCIO_STORAGE, { recursive: true });
 
   const proc: ChildProcess = spawn(
-    'pnpm',
-    ['exec', 'verdaccio', '--config', VERDACCIO_CONFIG, '--listen', String(port)],
+    'node',
+    ['./node_modules/verdaccio/bin/verdaccio', '--config', VERDACCIO_CONFIG, '--listen', String(port)],
     {
-      // Run from the ecosystem-ci root so `pnpm exec` finds verdaccio in
+      // Run from the ecosystem-ci root so it finds verdaccio in
       // THIS project's node_modules, not in the empty VERDACCIO_STORAGE dir.
       cwd: REPO_ROOT,
       stdio: ['ignore', 'pipe', 'pipe'],
