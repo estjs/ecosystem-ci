@@ -56,6 +56,13 @@ describe('injectOverrides', () => {
     expect(ws.overrides['babel-plugin-essor']).toBe(CI_VERSION);
   });
 
+  it('disables pnpm minimum release age for freshly published CI packages', () => {
+    writePkg({ name: 'suite' });
+    injectOverrides(dir, CI_VERSION);
+    const ws = readWorkspace();
+    expect(ws.minimumReleaseAge).toBe(0);
+  });
+
   it('merges into an existing pnpm-workspace.yaml without dropping keys', () => {
     writePkg({ name: 'suite' });
     writeFileSync(

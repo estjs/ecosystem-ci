@@ -161,6 +161,9 @@ export function injectOverrides(workRoot: string, ciVersion: string): void {
   for (const pkg of ESSOR_PACKAGES) {
     ws.overrides[pkg] = ciVersion;
   }
+  // CI publishes the essor packages to local Verdaccio immediately before
+  // installing downstream suites, so pnpm's age gate must not reject them.
+  ws.minimumReleaseAge = 0;
   writeFileSync(wsPath, yaml.dump(ws));
 }
 
