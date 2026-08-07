@@ -41,7 +41,7 @@ jobs:
           - athen
           - test-utils
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v4
 
@@ -78,7 +78,7 @@ jobs:
     env:
       HAVE_TOKEN: ${{ secrets.ESSOR_PR_TOKEN != '' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v4
 
